@@ -1,10 +1,21 @@
-FROM python:3
+FROM ubuntu:16.04
 
-COPY opcsimulator.py /
+ENV COLOR "red"
+RUN apt-get update -y && \
+    apt-get install -y python-pip python-dev
 
-EXPOSE 4840
+
+
+WORKDIR /app
+
 RUN pip install opcua flask requests
-CMD ["python", "/opcsimulator.py"]
+COPY . /app
+
+EXPOSE 8080
+ENTRYPOINT [ "python" ]
+
+CMD [ "app.py" ]
+
 
 #sudo docker build -t opcsimulator:latest .
 #oc new-app opcsimulator./oc apply -f opcsimulator/service.yaml
