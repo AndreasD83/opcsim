@@ -1,8 +1,8 @@
-FROM python:3.8-slim-buster
-
+#FROM python:3.8-slim-buster
+FROM ubuntu:16.04
 ENV COLOR "red"
-#RUN apt-get update -y && \
-#    apt-get install -y python-pip python-dev
+RUN apt-get update -y && \
+    apt-get install -y python-pip python-dev
 
 COPY ./requirements.txt /app/requirements.txt
 
@@ -11,7 +11,7 @@ RUN pip install -r requirements.txt
 
 COPY . /app
 
-EXPOSE 4840
+#EXPOSE 4840
 ENTRYPOINT [ "python" ]
 
 CMD [ "app.py" ]
