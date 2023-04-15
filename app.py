@@ -1,33 +1,44 @@
-from opcua import ua, Server
-import time
+import asyncio
+from asyncua import ua, Server
 
-# Starte den OPC-UA-Server
-server = Server()
-server.set_endpoint("opc.tcp://0.0.0.0:4840/")
-uri = "http://craziandi.com"
-namespace = server.register_namespace(uri)
-obj = server.get_objects_node()
+async def main():
+    server = Server()
 
-# Erstelle ein neues Objekt in der OPC-UA-Namespace
-lifebit_object = obj.add_object(namespace, "Production")
+    # Setze den Server-Namen auf "Simulator"
+    server.set_server_name("Simulator")
 
-# Füge eine Variable hinzu
-lifebit_signal = lifebit_object.add_variable(namespace, "lifebit", False)
-lifebit_signal.set_writable()
+    await server.init()
 
-production_signal = lifebit_object.add_variable(namespace, "production", True)
-production_signal.set_writable()
+    # Erstelle einen Namensraum
+    uri = "urn:craziandi.server"
+    idx = await server.register_namespace(uri)
 
-counter_signal = lifebit_object.add_variable(namespace, "counter", 0)
-counter_signal.set_writable()
+    # Erstelle ein Objekt mit einer Variable
+    obj = await server.nodes.objects.add_object(idx, "production")
+    automatic = await obj.add_variable(idx, "automatic", True)
+    lifebit = await obj.add_variable(idx, "lifebit", True)
+    counter = await obj.add_variable(idx, "counter", 0)
+    await lifebit.set_writable()
+    await counter.set_writable()
 
+    # Starte den Server
+    await server.start()
 
+    print(f"OPC UA Server gestartet. Endpoint: {server.endpoint}")
+    try:
+        # Keep the server running until interrupted
+        while True:
+            await asyncio.sleep(1)
+            val = await counter.get_value()
+            await counter.set_value(val + 1)
+            print(f"Variable counter geändert. Neuer Wert: {val+1}")
+            
+            val = await lifebit.get_value()
+            await lifebit.set_value(not(val))
+            print(f"Variable lifebit geändert. Neuer Wert: {not(val)}")
+    finally:
+        # Schließe den Server
+        await server.stop()
 
-# Starte den Server
-server.start()
-
-# Aktualisiere die Variable in einer Schleife
-while True:
-    lifebit_signal.set_value(not lifebit_signal.get_value())
-    counter_signal.set_value(counter_signal.get_value()+1)
-    time.sleep(1)
+if __name__ == "__main__":
+     asyncio.run(main())
